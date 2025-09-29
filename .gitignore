@@ -216,7 +216,7 @@ claude_code_cache/
 
 # Dataset
 data/raw/tiny-imagenet-200/*
-data/preprocessed
+data/curated
 data/class_mappings
 
 # macOS
