@@ -130,6 +130,12 @@ def train_model(model, model_name, train_loader, val_loader, config):
         "val_loss": [],
         "val_acc": [],
         "lr": [],
+        "config": {
+            "epochs": config.epochs,
+            "batch_size": config.batch_size,
+            "optimizer": config.optimizer,
+            "scheduler": config.scheduler,
+        },
     }
 
     best_val_acc = 0.0
