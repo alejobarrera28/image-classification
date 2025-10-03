@@ -209,6 +209,10 @@ def train_model(model, model_name, train_loader, val_loader, config):
     # Save final model
     torch.save(model.state_dict(), exp_dir / "final_model.pth")
 
+    # Add total training time to history
+    history["total_training_time_seconds"] = total_time
+    history["total_training_time_hours"] = total_time / 3600
+
     # Save training history
     with open(exp_dir / "history.json", "w") as f:
         json.dump(history, f, indent=4)
