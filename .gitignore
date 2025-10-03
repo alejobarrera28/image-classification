@@ -219,6 +219,11 @@ data/raw/tiny-imagenet-200/*
 data/curated
 data/class_mappings
 
+# Model weights
+*.pth
+*.pt
+*.h5
+
 # macOS
 .DS_Store
 .DS_Store?
