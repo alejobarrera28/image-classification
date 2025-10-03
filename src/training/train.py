@@ -73,8 +73,8 @@ def train_model(model, model_name, train_loader, val_loader, config):
         config: Training configuration module
     """
 
-    # Create experiment directory
-    exp_dir = Path("experiments") / model_name
+    # Create results directory
+    exp_dir = Path("results") / model_name
     exp_dir.mkdir(parents=True, exist_ok=True)
 
     # Loss and optimizer
@@ -290,7 +290,7 @@ def main():
     )
 
     # Load best model for test
-    checkpoint = torch.load(f"experiments/{args.model}/best_model.pth")
+    checkpoint = torch.load(f"results/{args.model}/best_model.pth")
     model.load_state_dict(checkpoint["model_state_dict"])
     print(f"\nLoaded best model from epoch {checkpoint['epoch']}")
 
@@ -298,7 +298,7 @@ def main():
     test_loss, test_acc = test_model(model, test_loader, config.device, args.model)
 
     # Save test results
-    exp_dir = Path("experiments") / args.model
+    exp_dir = Path("results") / args.model
     test_results = {"test_loss": test_loss, "test_acc": test_acc}
     with open(exp_dir / "test_results.json", "w") as f:
         json.dump(test_results, f, indent=4)
