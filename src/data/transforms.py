@@ -6,6 +6,7 @@ def get_transforms():
 
     train_transform = transforms.Compose(
         [
+            transforms.RandomCrop(64, padding=4),
             transforms.RandomHorizontalFlip(p=0.5),
             transforms.RandomRotation(degrees=10),
             transforms.ColorJitter(
@@ -13,6 +14,7 @@ def get_transforms():
             ),
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            transforms.RandomErasing(p=0.5, scale=(0.02, 0.2)),
         ]
     )
 
