@@ -158,7 +158,7 @@ def main():
         "--checkpoint",
         type=str,
         default=None,
-        help="Optional path to a checkpoint file (overrides default experiments/<model>/final_model.pth)",
+        help="Optional path to a checkpoint file (overrides default results/<model>/final_model.pth)",
     )
 
     args = parser.parse_args()
@@ -180,9 +180,9 @@ def main():
         model = AlexNet(num_classes=200).to(config.device)
 
     # Determine checkpoint path
-    exp_model_dir = Path("experiments") / args.model
+    exp_model_dir = Path("results") / args.model
     if args.checkpoint:
-        # Treat argument as filename under experiments/<model>
+        # Treat argument as filename under results/<model>
         name = args.checkpoint
         if not name.endswith(".pth"):
             name = name + ".pth"
@@ -200,20 +200,16 @@ def main():
     checkpoint = torch.load(ckpt_path, map_location=config.device)
 
     try:
-        model.load_state_dict(checkpoint)
+        model.load_state_dict(checkpoint["model_state_dict"])
     except Exception as e:
         print(f"Failed to load state dict: {e}")
         return
 
     # Run test
     if args.metric == "top1":
-        test_loss, test_acc = test_model(model, test_loader, config.device, args.model)
-        results = {"test_loss": test_loss, "test_acc": test_acc}
+        test_model(model, test_loader, config.device, args.model)
     else:
-        test_loss, top1_acc, top5_acc = test_model_top5(
-            model, test_loader, config.device, args.model
-        )
-        results = {"test_loss": test_loss, "top1_acc": top1_acc, "top5_acc": top5_acc}
+        test_model_top5(model, test_loader, config.device, args.model)
 
 
 if __name__ == "__main__":

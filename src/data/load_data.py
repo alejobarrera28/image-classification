@@ -88,6 +88,7 @@ def get_data_loaders(
         sampler=train_sampler,
         num_workers=num_workers,
         pin_memory=True,
+        persistent_workers=True
     )
 
     val_loader = DataLoader(
@@ -96,6 +97,7 @@ def get_data_loaders(
         sampler=val_sampler,
         num_workers=num_workers,
         pin_memory=True,
+        persistent_workers=True
     )
 
     test_loader = DataLoader(
@@ -104,6 +106,7 @@ def get_data_loaders(
         shuffle=False,
         num_workers=num_workers,
         pin_memory=True,
+        persistent_workers=True
     )
 
     # Print split info
