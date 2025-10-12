@@ -2,29 +2,42 @@ import torch
 import torch.nn as nn
 from .utils import count_parameters
 
+
 class AlexNet(nn.Module):
+    """
+    Differences with respect to riginal AlexNet architecture:
+    - Reduced kernel_size and stride in the first Conv2d layers
+    - Reduced with of fc layers
+    - Added BatchNorm2d
+    """
+
     def __init__(self, num_classes=200):
         super(AlexNet, self).__init__()
         self.layer1 = nn.Sequential(
             nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(64),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=3, stride=2),
         )
         self.layer2 = nn.Sequential(
             nn.Conv2d(64, 192, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(192),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=3, stride=2),
         )
         self.layer3 = nn.Sequential(
             nn.Conv2d(192, 384, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(384),
             nn.ReLU(inplace=True),
         )
         self.layer4 = nn.Sequential(
             nn.Conv2d(384, 256, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(256),
             nn.ReLU(inplace=True),
         )
         self.layer5 = nn.Sequential(
             nn.Conv2d(256, 256, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(256),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=3, stride=2),
         )
