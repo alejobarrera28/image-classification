@@ -56,7 +56,7 @@ if __name__ == "__main__":
         "--model",
         type=str,
         required=True,
-        choices=["alexnet"],
+        choices=["alexnet", "resnet"],
         help="Model name (e.g., alexnet)",
     )
 

@@ -19,7 +19,7 @@ sys.path.append(
 )
 import config
 from data.load_data import get_data_loaders
-from training.test import validate, test_model
+from training.test import validate, test_model_top5
 
 
 def train_epoch(model, train_loader, criterion, optimizer, device, epoch):
@@ -234,7 +234,7 @@ def main():
         "--model",
         type=str,
         required=True,
-        choices=["alexnet"],
+        choices=["alexnet", "resnet"],
         help="Model to train",
     )
 
@@ -287,6 +287,10 @@ def main():
         from models.alexnet import AlexNet
 
         model = AlexNet(num_classes=200).to(config.device)
+    elif args.model == "resnet":
+        from models.resnet18 import ResNet18
+
+        model = ResNet18(num_classes=200).to(config.device)
 
     # Print model info
     total_params = sum(p.numel() for p in model.parameters())
@@ -305,11 +309,17 @@ def main():
     print(f"\nLoaded best model from epoch {checkpoint['epoch']}")
 
     # Final test evaluation
-    test_loss, test_acc = test_model(model, test_loader, config.device, args.model)
+    test_loss, test_acc, test_top5_acc = test_model_top5(
+        model, test_loader, config.device, args.model
+    )
 
     # Save test results
     exp_dir = Path("results") / args.model
-    test_results = {"test_loss": test_loss, "test_acc": test_acc}
+    test_results = {
+        "test_loss": test_loss,
+        "test_acc": test_acc,
+        "test_top5_acc": test_top5_acc,
+    }
     with open(exp_dir / "test_results.json", "w") as f:
         json.dump(test_results, f, indent=4)
 

@@ -138,7 +138,7 @@ def main():
         "--model",
         type=str,
         required=True,
-        choices=["alexnet"],
+        choices=["alexnet", "resnet"],
         help="Model to test",
     )
 
@@ -178,6 +178,9 @@ def main():
     print(f"\nLoading {args.model.upper()} model...")
     if args.model == "alexnet":
         model = AlexNet(num_classes=200).to(config.device)
+    elif args.model == "resnet":
+        from models.resnet18 import ResNet18
+        model = ResNet18(num_classes=200).to(config.device)
 
     # Determine checkpoint path
     exp_model_dir = Path("results") / args.model
