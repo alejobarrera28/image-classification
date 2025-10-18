@@ -37,6 +37,7 @@ class ResNet18(nn.Module):
     Differences with respect to riginal ResNet18 architecture:
     - Reduced kernel_size, stride and padding of first Conv2d layer
     - Removed MaxPool2d
+    - Added dropout in final classifier
     """
 
     def __init__(self, num_classes=200):
@@ -77,7 +78,7 @@ class ResNet18(nn.Module):
         
         # Final layers
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.fc = nn.Linear(512, num_classes)
+        self.fc = nn.Sequential(nn.Dropout(0.5), nn.Linear(512, num_classes))
 
     def forward(self, x):
         # Initial conv

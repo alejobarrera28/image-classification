@@ -78,7 +78,7 @@ def train_model(model, model_name, train_loader, val_loader, config):
     exp_dir.mkdir(parents=True, exist_ok=True)
 
     # Loss and optimizer
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
 
     if config.optimizer == "sgd":
         optimizer = optim.SGD(

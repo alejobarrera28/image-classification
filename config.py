@@ -16,7 +16,7 @@ learning_rate = 0.1
 min_lr = 1e-6
 optimizer = "sgd"
 momentum = 0.9
-weight_decay = 5e-4
+weight_decay = 1e-3
 scheduler = "cosine"
 
 # Checkpoint saving
