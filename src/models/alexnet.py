@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-from src.models.utils import count_parameters
 
 
 class AlexNet(nn.Module):
@@ -72,5 +71,7 @@ class AlexNet(nn.Module):
 
 
 if __name__ == "__main__":
+    from utils.utils import count_parameters
+
     model = AlexNet(num_classes=200)
     count_parameters(model)

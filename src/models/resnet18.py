@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-from src.models.utils import count_parameters
 
 
 class BasicBlock(nn.Module):
@@ -117,5 +116,7 @@ class ResNet18(nn.Module):
 
 
 if __name__ == "__main__":
+    from utils.utils import count_parameters
+
     model = ResNet18(num_classes=200)
     count_parameters(model)
