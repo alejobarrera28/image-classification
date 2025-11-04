@@ -7,7 +7,7 @@ def organize_tiny_imagenet():
 
     # Paths
     raw_dir = "data/raw/tiny-imagenet-200"
-    processed_dir = "data/preprocessed"
+    processed_dir = "data/curated"
 
     # 1. Training data
     train_src = f"{raw_dir}/train"
