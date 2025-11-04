@@ -10,6 +10,7 @@ import argparse
 from pathlib import Path
 import json
 from tqdm import tqdm
+import numpy as np
 
 import sys
 
@@ -22,7 +23,9 @@ from data.load_data import get_data_loaders
 from training.test import validate, test_model_top5
 
 
-def train_epoch(model, train_loader, criterion, optimizer, device, epoch):
+def train_epoch(
+    model, train_loader, criterion, optimizer, device, epoch, mixup_cutmix_alpha=0.0
+):
     """Train for one epoch"""
     model.train()
     running_loss = 0.0
@@ -35,10 +38,35 @@ def train_epoch(model, train_loader, criterion, optimizer, device, epoch):
     for batch_idx, (inputs, targets) in enumerate(pbar):
         inputs, targets = inputs.to(device), targets.to(device)
 
+        # MixUp/CutMix augmentation
+        if mixup_cutmix_alpha > 0 and np.random.rand() < 0.5:
+            lam = np.random.beta(mixup_cutmix_alpha, mixup_cutmix_alpha)
+            index = torch.randperm(inputs.size(0)).to(device)
+
+            if np.random.rand() < 0.5:  # MixUp
+                inputs = lam * inputs + (1 - lam) * inputs[index]
+            else:  # CutMix
+                _, _, H, W = inputs.size()
+                cut_rat = np.sqrt(1.0 - lam)
+                cut_w, cut_h = int(W * cut_rat), int(H * cut_rat)
+                cx, cy = np.random.randint(W), np.random.randint(H)
+                x1 = np.clip(cx - cut_w // 2, 0, W)
+                y1 = np.clip(cy - cut_h // 2, 0, H)
+                x2 = np.clip(cx + cut_w // 2, 0, W)
+                y2 = np.clip(cy + cut_h // 2, 0, H)
+                inputs[:, :, y1:y2, x1:x2] = inputs[index, :, y1:y2, x1:x2]
+                lam = 1 - ((x2 - x1) * (y2 - y1) / (W * H))
+
+            targets_b = targets[index]
+        else:
+            lam, targets_b = 1.0, targets
+
         # Forward pass
         optimizer.zero_grad()
         outputs = model(inputs)
-        loss = criterion(outputs, targets)
+        loss = lam * criterion(outputs, targets) + (1 - lam) * criterion(
+            outputs, targets_b
+        )
 
         # Backward pass
         loss.backward()
@@ -121,6 +149,8 @@ def train_model(model, model_name, train_loader, val_loader, config):
     print(f"Learning rate: {config.learning_rate}")
     print(f"Optimizer: {config.optimizer}")
     print(f"Scheduler: {config.scheduler}")
+    if hasattr(config, "mixup_cutmix_alpha") and config.mixup_cutmix_alpha > 0:
+        print(f"MixUp/CutMix: enabled (alpha={config.mixup_cutmix_alpha})")
     print(f"{'='*60}\n")
 
     # Training history
@@ -145,8 +175,15 @@ def train_model(model, model_name, train_loader, val_loader, config):
     # Training loop
     for epoch in range(1, config.epochs + 1):
         # Train
+        mixup_cutmix_alpha = getattr(config, "mixup_cutmix_alpha", 0.0)
         train_loss, train_acc = train_epoch(
-            model, train_loader, criterion, optimizer, config.device, epoch
+            model,
+            train_loader,
+            criterion,
+            optimizer,
+            config.device,
+            epoch,
+            mixup_cutmix_alpha,
         )
 
         # Validate
@@ -265,6 +302,14 @@ def main():
         help="LR scheduler",
     )
 
+    # MixUp/CutMix augmentation
+    parser.add_argument(
+        "--mixup_cutmix_alpha",
+        type=float,
+        default=0.0,
+        help="MixUp/CutMix alpha (0=disabled, 0.2-1.0=enabled)",
+    )
+
     args = parser.parse_args()
 
     # Override config with command-line arguments
@@ -273,6 +318,7 @@ def main():
     config.learning_rate = args.lr
     config.optimizer = args.optimizer
     config.scheduler = args.scheduler
+    config.mixup_cutmix_alpha = args.mixup_cutmix_alpha
 
     # Load data
     print("Loading data...")
