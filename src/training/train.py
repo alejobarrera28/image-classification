@@ -234,7 +234,7 @@ def main():
         "--model",
         type=str,
         required=True,
-        choices=["alexnet", "resnet"],
+        choices=["alexnet", "resnet", "densenet", "vgg", "vit", "inception"],
         help="Model to train",
     )
 
@@ -291,6 +291,26 @@ def main():
         from models.resnet18 import ResNet18
 
         model = ResNet18(num_classes=200).to(config.device)
+
+    elif args.model == "densenet":
+        from models.densenet121 import DenseNet121
+
+        model = DenseNet121(num_classes=200).to(config.device)
+
+    elif args.model == "vgg":
+        from models.vgg16 import VGG16
+
+        model = VGG16(num_classes=200).to(config.device)
+
+    elif args.model == "vit":
+        from models.vit_b_16 import ViT_B_16
+
+        model = ViT_B_16(num_classes=200).to(config.device)
+
+    elif args.model == "inception":
+        from models.inception_v3 import InceptionV3
+
+        model = InceptionV3(num_classes=200).to(config.device)
 
     # Print model info
     total_params = sum(p.numel() for p in model.parameters())

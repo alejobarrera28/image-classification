@@ -16,6 +16,11 @@ sys.path.append(
 import config
 from data.load_data import get_data_loaders
 from models.alexnet import AlexNet
+from models.resnet18 import ResNet18
+from models.densenet121 import DenseNet121
+from models.vgg16 import VGG16
+from models.vit_b_16 import ViT_B_16
+from models.inception_v3 import InceptionV3
 
 
 def validate(model, val_loader, criterion, device, epoch=None):
@@ -138,7 +143,7 @@ def main():
         "--model",
         type=str,
         required=True,
-        choices=["alexnet", "resnet"],
+        choices=["alexnet", "resnet", "densenet", "vgg", "vit", "inception"],
         help="Model to test",
     )
 
@@ -176,11 +181,24 @@ def main():
 
     # Build model
     print(f"\nLoading {args.model.upper()} model...")
+
     if args.model == "alexnet":
         model = AlexNet(num_classes=200).to(config.device)
+
     elif args.model == "resnet":
-        from models.resnet18 import ResNet18
         model = ResNet18(num_classes=200).to(config.device)
+
+    elif args.model == "densenet":
+        model = DenseNet121(num_classes=200).to(config.device)
+
+    elif args.model == "vgg":
+        model = VGG16(num_classes=200).to(config.device)
+
+    elif args.model == "vit":
+        model = ViT_B_16(num_classes=200).to(config.device)
+
+    elif args.model == "inception":
+        model = InceptionV3(num_classes=200).to(config.device)
 
     # Determine checkpoint path
     exp_model_dir = Path("results") / args.model
