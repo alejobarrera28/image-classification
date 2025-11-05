@@ -7,6 +7,7 @@ class VGG16(nn.Module):
     Differences with respect to riginal VGG16 architecture:
     - Added BatchNorm after each Conv layer
     - Replaced FC stack with Global Avg Pooling
+    - Added Dropout for regularization
     """
 
     def __init__(self, num_classes=200):
@@ -94,7 +95,7 @@ class VGG16(nn.Module):
 
         # Global Average Pooling + final classifier
         self.gap = nn.AdaptiveAvgPool2d(1)  # GAP → (N, 512, 1, 1)
-        self.classifier = nn.Linear(512, num_classes)  # Final linear classifier
+        self.fc = nn.Sequential(nn.Dropout(0.5), nn.Linear(512, num_classes))
 
     def forward(self, x):
         # Block 1
@@ -128,7 +129,7 @@ class VGG16(nn.Module):
         # GAP + classifier
         x = self.gap(x)  # (N, 512, 1, 1)
         x = torch.flatten(x, 1)  # (N, 512)
-        x = self.classifier(x)  # (N, num_classes)
+        x = self.fc(x)  # (N, num_classes)
 
         return x
 
