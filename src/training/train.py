@@ -89,7 +89,7 @@ def train_epoch(
     return epoch_loss, epoch_acc
 
 
-def train_model(model, model_name, train_loader, val_loader, config):
+def train_model(model, model_name, train_loader, val_loader, config, resume_from=None):
     """
     Main training function
 
@@ -99,6 +99,7 @@ def train_model(model, model_name, train_loader, val_loader, config):
         train_loader: Training data loader
         val_loader: Validation data loader
         config: Training configuration module
+        resume_from: Path to checkpoint to resume from (optional)
     """
 
     # Create results directory
@@ -129,9 +130,12 @@ def train_model(model, model_name, train_loader, val_loader, config):
         )
 
     # Learning rate scheduler
+    # Use total_epochs for scheduler if specified, otherwise use epochs
+    scheduler_total_epochs = getattr(config, "total_epochs", config.epochs)
+
     if config.scheduler == "cosine":
         scheduler = CosineAnnealingLR(
-            optimizer, T_max=config.epochs, eta_min=config.min_lr
+            optimizer, T_max=scheduler_total_epochs, eta_min=config.min_lr
         )
     elif config.scheduler == "plateau":
         scheduler = ReduceLROnPlateau(
@@ -139,19 +143,6 @@ def train_model(model, model_name, train_loader, val_loader, config):
         )
     else:
         scheduler = None
-
-    print(f"\n{'='*60}")
-    print(f"Training {model_name.upper()}")
-    print(f"{'='*60}")
-    print(f"Device: {config.device}")
-    print(f"Epochs: {config.epochs}")
-    print(f"Batch size: {config.batch_size}")
-    print(f"Learning rate: {config.learning_rate}")
-    print(f"Optimizer: {config.optimizer}")
-    print(f"Scheduler: {config.scheduler}")
-    if hasattr(config, "mixup_cutmix_alpha") and config.mixup_cutmix_alpha > 0:
-        print(f"MixUp/CutMix: enabled (alpha={config.mixup_cutmix_alpha})")
-    print(f"{'='*60}\n")
 
     # Training history
     history = {
@@ -170,10 +161,50 @@ def train_model(model, model_name, train_loader, val_loader, config):
 
     best_val_acc = 0.0
     best_epoch = 0
+    start_epoch = 1
     start_time = time.time()
 
+    # Resume from checkpoint if specified
+    if resume_from:
+        print(f"\n{'='*60}")
+        print(f"Resuming from checkpoint: {resume_from}")
+        print(f"{'='*60}")
+        checkpoint = torch.load(resume_from)
+        model.load_state_dict(checkpoint["model_state_dict"])
+        optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+        start_epoch = checkpoint["epoch"] + 1
+        best_val_acc = checkpoint.get("best_val_acc", checkpoint.get("val_acc", 0.0))
+        best_epoch = checkpoint.get("best_epoch", checkpoint["epoch"])
+
+        # Load scheduler state if it exists
+        if scheduler is not None and "scheduler_state_dict" in checkpoint:
+            scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
+
+        # Load history if it exists
+        history_file = exp_dir / "history.json"
+        if history_file.exists():
+            with open(history_file, "r") as f:
+                history = json.load(f)
+
+        print(f"Resuming from epoch {start_epoch}")
+        print(f"Best validation accuracy so far: {best_val_acc:.2f}%")
+        print(f"{'='*60}\n")
+
+    print(f"\n{'='*60}")
+    print(f"Training {model_name.upper()}")
+    print(f"{'='*60}")
+    print(f"Device: {config.device}")
+    print(f"Epochs: {start_epoch} to {config.epochs}")
+    print(f"Batch size: {config.batch_size}")
+    print(f"Learning rate: {config.learning_rate}")
+    print(f"Optimizer: {config.optimizer}")
+    print(f"Scheduler: {config.scheduler}")
+    if hasattr(config, "mixup_cutmix_alpha") and config.mixup_cutmix_alpha > 0:
+        print(f"MixUp/CutMix: enabled (alpha={config.mixup_cutmix_alpha})")
+    print(f"{'='*60}\n")
+
     # Training loop
-    for epoch in range(1, config.epochs + 1):
+    for epoch in range(start_epoch, config.epochs + 1):
         # Train
         mixup_cutmix_alpha = getattr(config, "mixup_cutmix_alpha", 0.0)
         train_loss, train_acc = train_epoch(
@@ -214,29 +245,33 @@ def train_model(model, model_name, train_loader, val_loader, config):
         if val_acc > best_val_acc:
             best_val_acc = val_acc
             best_epoch = epoch
-            torch.save(
-                {
-                    "epoch": epoch,
-                    "model_state_dict": model.state_dict(),
-                    "optimizer_state_dict": optimizer.state_dict(),
-                    "val_acc": val_acc,
-                    "val_loss": val_loss,
-                },
-                exp_dir / "best_model.pth",
-            )
+            checkpoint_dict = {
+                "epoch": epoch,
+                "model_state_dict": model.state_dict(),
+                "optimizer_state_dict": optimizer.state_dict(),
+                "val_acc": val_acc,
+                "val_loss": val_loss,
+                "best_val_acc": best_val_acc,
+                "best_epoch": best_epoch,
+            }
+            if scheduler is not None:
+                checkpoint_dict["scheduler_state_dict"] = scheduler.state_dict()
+            torch.save(checkpoint_dict, exp_dir / "best_model.pth")
             print(f"  ✅ New best model saved! (Val Acc: {val_acc:.2f}%)")
 
         # Save checkpoint every N epochs
         if epoch % config.save_freq == 0:
-            torch.save(
-                {
-                    "epoch": epoch,
-                    "model_state_dict": model.state_dict(),
-                    "optimizer_state_dict": optimizer.state_dict(),
-                    "val_acc": val_acc,
-                },
-                exp_dir / f"checkpoint_epoch_{epoch}.pth",
-            )
+            checkpoint_dict = {
+                "epoch": epoch,
+                "model_state_dict": model.state_dict(),
+                "optimizer_state_dict": optimizer.state_dict(),
+                "val_acc": val_acc,
+                "best_val_acc": best_val_acc,
+                "best_epoch": best_epoch,
+            }
+            if scheduler is not None:
+                checkpoint_dict["scheduler_state_dict"] = scheduler.state_dict()
+            torch.save(checkpoint_dict, exp_dir / f"checkpoint_epoch_{epoch}.pth")
 
         print("-" * 60)
 
@@ -310,6 +345,22 @@ def main():
         help="MixUp/CutMix alpha (0=disabled, 0.2-1.0=enabled)",
     )
 
+    # Resume training
+    parser.add_argument(
+        "--resume",
+        type=str,
+        default=None,
+        help="Path to checkpoint to resume from (e.g., results/vgg/best_model.pth)",
+    )
+
+    # Total epochs for scheduler (useful for batch training)
+    parser.add_argument(
+        "--total_epochs",
+        type=int,
+        default=None,
+        help="Total epochs for LR scheduler (defaults to --epochs). Use when training in batches.",
+    )
+
     args = parser.parse_args()
 
     # Override config with command-line arguments
@@ -319,6 +370,7 @@ def main():
     config.optimizer = args.optimizer
     config.scheduler = args.scheduler
     config.mixup_cutmix_alpha = args.mixup_cutmix_alpha
+    config.total_epochs = args.total_epochs if args.total_epochs else args.epochs
 
     # Load data
     print("Loading data...")
@@ -366,7 +418,7 @@ def main():
 
     # Train the model
     history, best_val_acc = train_model(
-        model, args.model, train_loader, val_loader, config
+        model, args.model, train_loader, val_loader, config, resume_from=args.resume
     )
 
     # Load best model for test
