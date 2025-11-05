@@ -169,7 +169,7 @@ def train_model(model, model_name, train_loader, val_loader, config, resume_from
         print(f"\n{'='*60}")
         print(f"Resuming from checkpoint: {resume_from}")
         print(f"{'='*60}")
-        checkpoint = torch.load(resume_from)
+        checkpoint = torch.load(resume_from, map_location=config.device)
         model.load_state_dict(checkpoint["model_state_dict"])
         optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
         start_epoch = checkpoint["epoch"] + 1
