@@ -401,9 +401,9 @@ def main():
         model = VGG16(num_classes=200).to(config.device)
 
     elif args.model == "vit":
-        from models.vit_b_16 import ViT_B_16
+        from models.vit_s_16 import ViT_S_16
 
-        model = ViT_B_16(num_classes=200).to(config.device)
+        model = ViT_S_16(num_classes=200).to(config.device)
 
     elif args.model == "inception":
         from models.inception_v3 import InceptionV3

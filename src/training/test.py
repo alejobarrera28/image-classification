@@ -19,7 +19,7 @@ from models.alexnet import AlexNet
 from models.resnet18 import ResNet18
 from models.densenet121 import DenseNet121
 from models.vgg16 import VGG16
-from models.vit_b_16 import ViT_B_16
+from models.vit_s_16 import ViT_S_16
 from models.inception_v3 import InceptionV3
 
 
@@ -195,7 +195,7 @@ def main():
         model = VGG16(num_classes=200).to(config.device)
 
     elif args.model == "vit":
-        model = ViT_B_16(num_classes=200).to(config.device)
+        model = ViT_S_16(num_classes=200).to(config.device)
 
     elif args.model == "inception":
         model = InceptionV3(num_classes=200).to(config.device)
