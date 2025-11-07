@@ -19,5 +19,9 @@ momentum = 0.9
 weight_decay = 1e-3
 scheduler = "cosine"
 
+# Learning rate warmup
+warmup_epochs = 0
+warmup_start_lr = 1e-6
+
 # Checkpoint saving
 save_freq = 10

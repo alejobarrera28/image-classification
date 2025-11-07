@@ -2,7 +2,11 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.optim.lr_scheduler import CosineAnnealingLR, ReduceLROnPlateau
+from torch.optim.lr_scheduler import (
+    CosineAnnealingLR,
+    LinearLR,
+    SequentialLR,
+)
 
 import os
 import time
@@ -132,17 +136,33 @@ def train_model(model, model_name, train_loader, val_loader, config, resume_from
     # Learning rate scheduler
     # Use total_epochs for scheduler if specified, otherwise use epochs
     scheduler_total_epochs = getattr(config, "total_epochs", config.epochs)
+    warmup_epochs = getattr(config, "warmup_epochs", 0)
+    warmup_start_lr = getattr(config, "warmup_start_lr", 1e-6)
 
     if config.scheduler == "cosine":
-        scheduler = CosineAnnealingLR(
-            optimizer, T_max=scheduler_total_epochs, eta_min=config.min_lr
-        )
-    elif config.scheduler == "plateau":
-        scheduler = ReduceLROnPlateau(
-            optimizer, mode="max", factor=0.5, patience=10, verbose=True
+        main_scheduler = CosineAnnealingLR(
+            optimizer,
+            T_max=scheduler_total_epochs - warmup_epochs,
+            eta_min=config.min_lr,
         )
     else:
-        scheduler = None
+        main_scheduler = None
+
+    # Add warmup if specified
+    if warmup_epochs > 0 and main_scheduler is not None:
+        warmup_scheduler = LinearLR(
+            optimizer,
+            start_factor=warmup_start_lr / config.learning_rate,
+            end_factor=1.0,
+            total_iters=warmup_epochs,
+        )
+        scheduler = SequentialLR(
+            optimizer,
+            schedulers=[warmup_scheduler, main_scheduler],
+            milestones=[warmup_epochs],
+        )
+    else:
+        scheduler = main_scheduler
 
     # Training history
     history = {
@@ -199,6 +219,8 @@ def train_model(model, model_name, train_loader, val_loader, config, resume_from
     print(f"Learning rate: {config.learning_rate}")
     print(f"Optimizer: {config.optimizer}")
     print(f"Scheduler: {config.scheduler}")
+    if warmup_epochs > 0:
+        print(f"Warmup: {warmup_epochs} epochs (start_lr={warmup_start_lr})")
     if hasattr(config, "mixup_cutmix_alpha") and config.mixup_cutmix_alpha > 0:
         print(f"MixUp/CutMix: enabled (alpha={config.mixup_cutmix_alpha})")
     print(f"{'='*60}\n")
@@ -223,10 +245,7 @@ def train_model(model, model_name, train_loader, val_loader, config, resume_from
         # Update learning rate
         current_lr = optimizer.param_groups[0]["lr"]
         if scheduler is not None:
-            if config.scheduler == "plateau":
-                scheduler.step(val_acc)
-            else:
-                scheduler.step()
+            scheduler.step()
 
         # Save history
         history["train_loss"].append(train_loss)
@@ -320,6 +339,9 @@ def main():
     parser.add_argument(
         "--lr", type=float, default=config.learning_rate, help="Initial learning rate"
     )
+    parser.add_argument(
+        "--weight_decay", type=float, default=config.weight_decay, help="Weight decay"
+    )
 
     # Optimizer selection
     parser.add_argument(
@@ -333,8 +355,22 @@ def main():
         "--scheduler",
         type=str,
         default=config.scheduler,
-        choices=["cosine", "plateau", "none"],
+        choices=["cosine", "none"],
         help="LR scheduler",
+    )
+
+    # Learning rate warmup
+    parser.add_argument(
+        "--warmup_epochs",
+        type=int,
+        default=config.warmup_epochs,
+        help="Number of warmup epochs (0=disabled)",
+    )
+    parser.add_argument(
+        "--warmup_start_lr",
+        type=float,
+        default=config.warmup_start_lr,
+        help="Starting LR for warmup phase",
     )
 
     # MixUp/CutMix augmentation
@@ -367,10 +403,13 @@ def main():
     config.batch_size = args.batch_size
     config.epochs = args.epochs
     config.learning_rate = args.lr
+    config.weight_decay = args.weight_decay
     config.optimizer = args.optimizer
     config.scheduler = args.scheduler
     config.mixup_cutmix_alpha = args.mixup_cutmix_alpha
     config.total_epochs = args.total_epochs if args.total_epochs else args.epochs
+    config.warmup_epochs = args.warmup_epochs
+    config.warmup_start_lr = args.warmup_start_lr
 
     # Load data
     print("Loading data...")
