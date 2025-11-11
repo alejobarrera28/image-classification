@@ -62,13 +62,22 @@ class MultiHeadAttention(nn.Module):
         qkv = qkv.permute(2, 0, 3, 1, 4)
         q, k, v = qkv[0], qkv[1], qkv[2]
 
-        # Scaled dot-product attention
-        attn = (q @ k.transpose(-2, -1)) * (1.0 / self.head_dim**0.5)
-        attn = attn.softmax(dim=-1)
-        attn = self.attn_dropout(attn)
+        # Attention = softmax(QK^T / sqrt(d_k)) @ V
+        # Step 1: Compute QK^T
+        qk = q @ k.transpose(-2, -1)
+
+        # Step 2: Scale by sqrt(d_k)
+        qk_scaled = qk * (1.0 / self.head_dim**0.5)
+
+        # Step 3: Apply softmax to get attention weights
+        attention_weights = qk_scaled.softmax(dim=-1)
+        attention_weights = self.attn_dropout(attention_weights)
+
+        # Step 4: Apply attention weights to V
+        attention_output = attention_weights @ v
 
         # Combine heads and project
-        x = (attn @ v).transpose(1, 2).reshape(B, N, C)
+        x = attention_output.transpose(1, 2).reshape(B, N, C)
         x = self.projection(x)
         x = self.projection_dropout(x)
         return x
