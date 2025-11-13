@@ -7,12 +7,12 @@ class DenseLayer(nn.Module):
         super(DenseLayer, self).__init__()
         self.bn1 = nn.BatchNorm2d(in_channels)
         self.relu1 = nn.ReLU(inplace=True)
-        self.conv1 = nn.Conv2d(in_channels, 128, kernel_size=1, stride=1, bias=False)
+        self.conv1 = nn.Conv2d(in_channels, 4 * growth_rate, kernel_size=1, stride=1, bias=False)
 
-        self.bn2 = nn.BatchNorm2d(128)
+        self.bn2 = nn.BatchNorm2d(4 * growth_rate)
         self.relu2 = nn.ReLU(inplace=True)
         self.conv2 = nn.Conv2d(
-            128, growth_rate, kernel_size=3, stride=1, padding=1, bias=False
+            4 * growth_rate, growth_rate, kernel_size=3, stride=1, padding=1, bias=False
         )
 
     def forward(self, x):
@@ -66,6 +66,7 @@ class DenseNet121(nn.Module):
     - Replaced initial 7x7 conv with 3×3 stack, no maxpool
     - Increased growth rate
     - Modified transition compression θ
+    - Reduced layers per dense block
     """
 
     def __init__(self, num_classes=200):
@@ -76,40 +77,40 @@ class DenseNet121(nn.Module):
         self.bn1 = nn.BatchNorm2d(32)
         self.relu1 = nn.ReLU(inplace=True)
 
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1, bias=False)
-        self.bn2 = nn.BatchNorm2d(64)
+        self.conv2 = nn.Conv2d(32, 48, kernel_size=3, stride=1, padding=1, bias=False)
+        self.bn2 = nn.BatchNorm2d(48)
         self.relu2 = nn.ReLU(inplace=True)
 
-        self.conv3 = nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1, bias=False)
-        self.bn3 = nn.BatchNorm2d(64)
+        self.conv3 = nn.Conv2d(48, 48, kernel_size=3, stride=1, padding=1, bias=False)
+        self.bn3 = nn.BatchNorm2d(48)
         self.relu3 = nn.ReLU(inplace=True)
 
-        # Dense Block 1 - growth_rate 38
-        self.dense1 = DenseBlock(num_layers=6, in_channels=64, growth_rate=38)
+        # Dense Block 1 - 6 layers, growth_rate=20
+        self.dense1 = DenseBlock(num_layers=6, in_channels=48, growth_rate=20)
         # Transition 1 - θ=0.5
-        self.trans1 = Transition(in_channels=292, out_channels=146)
+        self.trans1 = Transition(in_channels=168, out_channels=84)
 
-        # Dense Block 2 - growth_rate 38
-        self.dense2 = DenseBlock(num_layers=12, in_channels=146, growth_rate=38)
-        # Transition 2 - θ=0.65
-        self.trans2 = Transition(in_channels=602, out_channels=391)
+        # Dense Block 2 - 8 layers, growth_rate=24
+        self.dense2 = DenseBlock(num_layers=8, in_channels=84, growth_rate=24)
+        # Transition 2 - θ=0.6
+        self.trans2 = Transition(in_channels=276, out_channels=166)
 
-        # Dense Block 3 - growth_rate 44
-        self.dense3 = DenseBlock(num_layers=24, in_channels=391, growth_rate=44)
-        # Transition 3 - θ=0.75
-        self.trans3 = Transition(in_channels=1447, out_channels=1085)
+        # Dense Block 3 - 12 layers, growth_rate=28
+        self.dense3 = DenseBlock(num_layers=12, in_channels=166, growth_rate=28)
+        # Transition 3 - θ=0.7
+        self.trans3 = Transition(in_channels=502, out_channels=351)
 
-        # Dense Block 4 - growth_rate 44
-        self.dense4 = DenseBlock(num_layers=16, in_channels=1085, growth_rate=44)
+        # Dense Block 4 - 8 layers, growth_rate=28
+        self.dense4 = DenseBlock(num_layers=8, in_channels=351, growth_rate=28)
 
         # Final layers
-        self.bn_final = nn.BatchNorm2d(1789)
+        self.bn_final = nn.BatchNorm2d(575)
         self.relu_final = nn.ReLU(inplace=True)
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.fc = nn.Linear(1789, num_classes)
+        self.fc = nn.Linear(575, num_classes)
 
     def forward(self, x):
-        # Initial feature extraction (small-image conv stack)
+        # Initial feature extraction
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu1(x)
