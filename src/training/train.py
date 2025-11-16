@@ -179,6 +179,10 @@ def train_model(model, model_name, train_loader, val_loader, config, resume_from
         },
     }
 
+    # Add optional config parameters only if they exist
+    if hasattr(config, "mixup_cutmix_alpha") and config.mixup_cutmix_alpha > 0:
+        history["config"]["mixup_cutmix_alpha"] = config.mixup_cutmix_alpha
+
     best_val_acc = 0.0
     best_epoch = 0
     start_epoch = 1
@@ -325,7 +329,7 @@ def main():
         "--model",
         type=str,
         required=True,
-        choices=["alexnet", "resnet", "densenet", "vgg", "vit", "inception"],
+        choices=["alexnet", "resnet", "densenet", "vgg", "vit", "efficientnet"],
         help="Model to train",
     )
 
@@ -444,10 +448,10 @@ def main():
 
         model = ViT_S_16(num_classes=200).to(config.device)
 
-    elif args.model == "inception":
-        from models.inception_v3 import InceptionV3
+    elif args.model == "efficientnet":
+        from models.efficientnet_b0 import EfficientNetB0
 
-        model = InceptionV3(num_classes=200).to(config.device)
+        model = EfficientNetB0(num_classes=200).to(config.device)
 
     # Print model info
     total_params = sum(p.numel() for p in model.parameters())
