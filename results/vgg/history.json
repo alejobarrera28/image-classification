@@ -413,7 +413,8 @@
         "epochs": 80,
         "batch_size": 128,
         "optimizer": "sgd",
-        "scheduler": "cosine"
+        "scheduler": "cosine",
+        "mixup_cutmix_alpha": 0.4
     },
     "total_training_time_seconds": 84792.81670379639,
     "total_training_time_hours": 23.553560195498996
