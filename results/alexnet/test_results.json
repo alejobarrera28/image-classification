@@ -1,4 +1,5 @@
 {
     "test_loss": 2.0096380733236483,
-    "test_acc": 51.09
+    "test_acc": 51.09,
+    "test_top5_acc": 76.65
 }
