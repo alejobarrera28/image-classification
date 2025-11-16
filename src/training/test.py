@@ -20,7 +20,7 @@ from models.resnet18 import ResNet18
 from models.densenet121 import DenseNet121
 from models.vgg16 import VGG16
 from models.vit_s_16 import ViT_S_16
-from models.inception_v3 import InceptionV3
+from models.efficientnet_b0 import EfficientNetB0
 
 
 def validate(model, val_loader, criterion, device, epoch=None):
@@ -143,7 +143,7 @@ def main():
         "--model",
         type=str,
         required=True,
-        choices=["alexnet", "resnet", "densenet", "vgg", "vit", "inception"],
+        choices=["alexnet", "resnet", "densenet", "vgg", "vit", "efficientnet"],
         help="Model to test",
     )
 
@@ -197,8 +197,8 @@ def main():
     elif args.model == "vit":
         model = ViT_S_16(num_classes=200).to(config.device)
 
-    elif args.model == "inception":
-        model = InceptionV3(num_classes=200).to(config.device)
+    elif args.model == "efficientnet":
+        model = EfficientNetB0(num_classes=200).to(config.device)
 
     # Determine checkpoint path
     exp_model_dir = Path("results") / args.model
