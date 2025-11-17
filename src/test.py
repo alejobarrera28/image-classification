@@ -9,18 +9,19 @@ from tqdm import tqdm
 
 import sys
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.append(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-)
+# Add project root to path
+_project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
+
 import config
-from data.load_data import get_data_loaders
-from models.alexnet import AlexNet
-from models.resnet18 import ResNet18
-from models.densenet121 import DenseNet121
-from models.vgg16 import VGG16
-from models.vit_s_16 import ViT_S_16
-from models.efficientnet_b0 import EfficientNetB0
+from src.data.load_data import get_data_loaders
+from src.models.alexnet import AlexNet
+from src.models.resnet18 import ResNet18
+from src.models.densenet121 import DenseNet121
+from src.models.vgg16 import VGG16
+from src.models.vit_s_16 import ViT_S_16
+from src.models.efficientnet_b0 import EfficientNetB0
 
 
 def validate(model, val_loader, criterion, device, epoch=None):

@@ -19,13 +19,14 @@ import psutil
 
 import sys
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.append(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-)
+# Add project root to path
+_project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
+
 import config
-from data.load_data import get_data_loaders
-from test import validate, test_model_top5
+from src.data.load_data import get_data_loaders
+from src.test import validate, test_model_top5
 
 
 def train_epoch(
@@ -459,31 +460,31 @@ def main():
     # Load model
     print(f"\nLoading {args.model.upper()} model...")
     if args.model == "alexnet":
-        from models.alexnet import AlexNet
+        from src.models.alexnet import AlexNet
 
         model = AlexNet(num_classes=200).to(config.device)
     elif args.model == "resnet":
-        from models.resnet18 import ResNet18
+        from src.models.resnet18 import ResNet18
 
         model = ResNet18(num_classes=200).to(config.device)
 
     elif args.model == "densenet":
-        from models.densenet121 import DenseNet121
+        from src.models.densenet121 import DenseNet121
 
         model = DenseNet121(num_classes=200).to(config.device)
 
     elif args.model == "vgg":
-        from models.vgg16 import VGG16
+        from src.models.vgg16 import VGG16
 
         model = VGG16(num_classes=200).to(config.device)
 
     elif args.model == "vit":
-        from models.vit_s_16 import ViT_S_16
+        from src.models.vit_s_16 import ViT_S_16
 
         model = ViT_S_16(num_classes=200).to(config.device)
 
     elif args.model == "efficientnet":
-        from models.efficientnet_b0 import EfficientNetB0
+        from src.models.efficientnet_b0 import EfficientNetB0
 
         model = EfficientNetB0(num_classes=200).to(config.device)
 

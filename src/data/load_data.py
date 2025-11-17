@@ -3,7 +3,7 @@ import os
 import torch
 from torch.utils.data import DataLoader, SubsetRandomSampler
 from torchvision.datasets import ImageFolder
-from data.transforms import get_transforms
+from src.data.transforms import get_transforms
 import numpy as np
 
 
