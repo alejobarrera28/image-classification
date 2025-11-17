@@ -216,5 +216,6 @@
         "scheduler": "cosine"
     },
     "total_training_time_seconds": 7369.903314304352,
-    "total_training_time_hours": 2.047195365084542
+    "total_training_time_hours": 2.047195365084542,
+    "peak_training_memory_mb": 2027.703125
 }

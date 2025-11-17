@@ -15,6 +15,7 @@ from pathlib import Path
 import json
 from tqdm import tqdm
 import numpy as np
+import psutil
 
 import sys
 
@@ -28,7 +29,7 @@ from training.test import validate, test_model_top5
 
 
 def train_epoch(
-    model, train_loader, criterion, optimizer, device, epoch, mixup_cutmix_alpha=0.0
+    model, train_loader, criterion, optimizer, device, epoch, mixup_cutmix_alpha=0.0, memory_tracker=None
 ):
     """Train for one epoch"""
     model.train()
@@ -75,6 +76,21 @@ def train_epoch(
         # Backward pass
         loss.backward()
         optimizer.step()
+
+        # Track peak memory during training (only in first epoch)
+        # Peak occurs after optimizer.step() when optimizer state is initialized
+        if memory_tracker is not None:
+            # Measure CPU (RSS) + GPU memory
+            cpu_memory_mb = memory_tracker['process'].memory_info().rss / 1024**2
+            if device.type == 'mps':
+                gpu_memory_mb = torch.mps.driver_allocated_memory() / 1024**2
+            elif device.type == 'cuda':
+                gpu_memory_mb = torch.cuda.memory_allocated() / 1024**2
+            else:
+                gpu_memory_mb = 0
+
+            total_memory_mb = cpu_memory_mb + gpu_memory_mb
+            memory_tracker['peak_mb'] = max(memory_tracker['peak_mb'], total_memory_mb)
 
         # Statistics
         running_loss += loss.item()
@@ -229,9 +245,17 @@ def train_model(model, model_name, train_loader, val_loader, config, resume_from
         print(f"MixUp/CutMix: enabled (alpha={config.mixup_cutmix_alpha})")
     print(f"{'='*60}\n")
 
+    # Track peak training memory during first epoch
+    # Memory tracker measures peak during forward/backward pass
+    memory_tracker = {
+        'process': psutil.Process(os.getpid()),
+        'peak_mb': 0
+    }
+    peak_training_memory_mb = None
+
     # Training loop
     for epoch in range(start_epoch, config.epochs + 1):
-        # Train
+        # Train (pass memory tracker only on first epoch)
         mixup_cutmix_alpha = getattr(config, "mixup_cutmix_alpha", 0.0)
         train_loss, train_acc = train_epoch(
             model,
@@ -241,7 +265,13 @@ def train_model(model, model_name, train_loader, val_loader, config, resume_from
             config.device,
             epoch,
             mixup_cutmix_alpha,
+            memory_tracker=memory_tracker if epoch == start_epoch else None
         )
+
+        # Report peak memory after first epoch
+        if epoch == start_epoch and memory_tracker['peak_mb'] > 0:
+            peak_training_memory_mb = memory_tracker['peak_mb']
+            print(f"  Peak training memory: {peak_training_memory_mb:.1f} MB")
 
         # Validate
         val_loss, val_acc = validate(model, val_loader, criterion, config.device, epoch)
@@ -313,6 +343,10 @@ def train_model(model, model_name, train_loader, val_loader, config, resume_from
     # Add total training time to history
     history["total_training_time_seconds"] = total_time
     history["total_training_time_hours"] = total_time / 3600
+
+    # Add peak training memory to history
+    if peak_training_memory_mb is not None:
+        history["peak_training_memory_mb"] = peak_training_memory_mb
 
     # Save training history
     with open(exp_dir / "history.json", "w") as f:

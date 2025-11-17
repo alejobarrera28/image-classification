@@ -417,5 +417,6 @@
         "mixup_cutmix_alpha": 0.4
     },
     "total_training_time_seconds": 108277.60268807411,
-    "total_training_time_hours": 30.077111857798364
+    "total_training_time_hours": 30.077111857798364,
+    "peak_training_memory_mb": 3964.8125
 }
