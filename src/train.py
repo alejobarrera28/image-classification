@@ -1,4 +1,4 @@
-# src/training/train.py
+# src/train.py
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -25,7 +25,7 @@ sys.path.append(
 )
 import config
 from data.load_data import get_data_loaders
-from training.test import validate, test_model_top5
+from test import validate, test_model_top5
 
 
 def train_epoch(
