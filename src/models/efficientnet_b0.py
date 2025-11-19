@@ -94,7 +94,7 @@ class EfficientNetB0(nn.Module):
     """
     Differences with respect to original EfficientNet-B0 architecture:
     - Removed stochastic depth for simplicity
-    - Standard dropout rate of 0.5 in classifier
+    - Standard dropout rate of 0.3 in classifier
     - Increased kernel sizes: k3→k5, k5→k7
     """
 
@@ -203,7 +203,7 @@ class EfficientNetB0(nn.Module):
 
         # Classifier
         self.avgpool = nn.AdaptiveAvgPool2d(1)
-        self.fc = nn.Sequential(nn.Dropout(0.5), nn.Linear(1280, num_classes))
+        self.fc = nn.Sequential(nn.Dropout(0.3), nn.Linear(1280, num_classes))
 
     def forward(self, x):
         # Stage 0

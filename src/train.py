@@ -143,6 +143,13 @@ def train_model(model, model_name, train_loader, val_loader, config, resume_from
             lr=config.learning_rate,
             weight_decay=config.weight_decay,
         )
+    elif config.optimizer == "rmsprop":
+        optimizer = optim.RMSprop(
+            model.parameters(),
+            lr=config.learning_rate,
+            momentum=config.momentum,
+            weight_decay=config.weight_decay,
+        )
     else:
         optimizer = optim.AdamW(
             model.parameters(),
@@ -387,7 +394,7 @@ def main():
         "--optimizer",
         type=str,
         default=config.optimizer,
-        choices=["sgd", "adam", "adamw"],
+        choices=["sgd", "adam", "adamw", "rmsprop"],
         help="Optimizer",
     )
     parser.add_argument(
