@@ -1,3 +1,10 @@
+"""
+ViT brought transformer architectures—originally designed for NLP—into image
+classification. It treats images as patch sequences and relies on self-attention
+instead of convolutions. ViT demonstrated that transformers can outperform CNNs
+when trained on large datasets, marking a major architectural shift in computer vision.
+"""
+
 import torch
 import torch.nn as nn
 

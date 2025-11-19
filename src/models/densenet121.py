@@ -1,3 +1,10 @@
+"""
+DenseNet connects each layer to every later layer, promoting feature reuse and 
+improving gradient flow. This results in compact models that learn rich 
+representations with fewer parameters. DenseNet showed that dense connectivity 
+can improve efficiency and accuracy simultaneously.
+"""
+
 import torch
 import torch.nn as nn
 

@@ -1,3 +1,10 @@
+"""
+ResNet solved the degradation problem in deep networks using residual connections—skip 
+links that let gradients flow easily. This allowed networks to scale to hundreds 
+of layers and still train reliably. ResNet fundamentally changed how deep 
+architectures are built and became a default baseline across vision tasks.
+"""
+
 import torch
 import torch.nn as nn
 

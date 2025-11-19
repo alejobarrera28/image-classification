@@ -1,3 +1,10 @@
+"""
+VGG demonstrated that simply stacking small 3×3 convolution filters could 
+create deep, very effective models. Its clean, uniform architecture made it 
+easy to understand and reuse, becoming a standard backbone in research. 
+VGG highlighted the value of depth in CNNs, even though it was computationally heavy.
+"""
+
 import torch
 import torch.nn as nn
 

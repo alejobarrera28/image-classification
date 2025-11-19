@@ -1,3 +1,10 @@
+"""
+EfficientNet introduced a systematic “compound scaling” strategy to scale depth,
+width, and resolution together. Combined with neural architecture search, it
+produced models that were far more efficient than previous CNNs. It became
+popular for achieving strong accuracy while staying lightweight and practical.
+"""
+
 import torch
 import torch.nn as nn
 

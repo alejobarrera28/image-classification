@@ -1,3 +1,11 @@
+"""
+AlexNet was a breakthrough deep CNN that won the 2012 ImageNet challenge by a
+huge margin. Its success showed that large neural networks trained on GPUs
+could outperform traditional vision methods. It introduced ReLU activations
+at scale, dropout for regularization, and heavy data augmentation. AlexNet
+essentially kicked off the deep-learning revolution in computer vision.
+"""
+
 import torch
 import torch.nn as nn
 
